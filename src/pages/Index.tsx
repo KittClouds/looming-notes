@@ -5,12 +5,37 @@ import { NoteEditor } from '@/components/NoteEditor';
 import { useNotes } from '@/hooks/useNotes';
 
 const Index = () => {
-  const { currentNote, updateNote } = useNotes();
+  const {
+    folders,
+    globalNotes,
+    favoriteNotes,
+    currentNote,
+    currentNoteId,
+    createFolder,
+    createNote,
+    updateFolder,
+    deleteFolder,
+    updateNote,
+    deleteNote,
+    navigateToNote,
+  } = useNotes();
 
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar />
+        <AppSidebar 
+          folders={folders}
+          globalNotes={globalNotes}
+          favoriteNotes={favoriteNotes}
+          currentNoteId={currentNoteId ?? undefined}
+          onNavigateToNote={navigateToNote}
+          onCreateFolder={createFolder}
+          onCreateNote={createNote}
+          onUpdateFolder={updateFolder}
+          onDeleteFolder={deleteFolder}
+          onUpdateNote={updateNote}
+          onDeleteNote={deleteNote}
+        />
         <SidebarInset className="flex flex-col flex-1">
           <AppHeader />
           <main className="flex-1 overflow-hidden">
