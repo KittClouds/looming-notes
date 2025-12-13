@@ -78,7 +78,8 @@ import {
   RichTextBubbleTable,
   RichTextBubbleText,
   RichTextBubbleTwitter,
-  RichTextBubbleVideo
+  RichTextBubbleVideo,
+  RichTextBubbleMenuDragHandle
 } from 'reactjs-tiptap-editor/bubble';
 
 function convertBase64ToBlob(base64: string) {
@@ -331,6 +332,7 @@ export function NoteEditor() {
           </div>
 
           {/* Bubble Menus */}
+          <RichTextBubbleMenuDragHandle />
           <RichTextBubbleText />
           <RichTextBubbleLink />
           <RichTextBubbleImage />
