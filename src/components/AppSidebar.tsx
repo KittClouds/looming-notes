@@ -2,7 +2,7 @@ import * as React from "react";
 import {
   ChevronRight,
   ChevronDown,
-  Folder,
+  Folder as FolderIcon,
   FolderOpen,
   Plus,
   MoreVertical,
@@ -41,35 +41,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { Folder, Note, FolderId, NoteId } from '@/store/notes';
 
 // Color palette for folders
 const DEFAULT_COLORS = ["#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#ef4444", "#14b8a6", "#6366f1"];
-
-// Core data types
-interface FolderId {
-  id: string;
-}
-
-interface NoteId {
-  id: string;
-}
-
-interface Folder {
-  id: FolderId;
-  name: string;
-  color?: string;
-  parent?: FolderId;
-  subfolders?: Folder[];
-  notes?: Note[];
-}
-
-interface Note {
-  id: NoteId;
-  title: string;
-  favorite?: boolean;
-  folder?: FolderId;
-  content?: string;
-}
 
 // Props for folder component
 interface FolderItemProps {
@@ -181,7 +156,7 @@ function FolderItem({
               {isExpanded ? (
                 <FolderOpen className="h-4 w-4 shrink-0" style={{ color: folderColor }} />
               ) : (
-                <Folder className="h-4 w-4 shrink-0" style={{ color: folderColor }} />
+                <FolderIcon className="h-4 w-4 shrink-0" style={{ color: folderColor }} />
               )}
               <span className="truncate text-sm font-medium">{folder.name || "New Folder"}</span>
             </div>
@@ -462,242 +437,19 @@ const demoData = {
 };
 
 export function AppSidebar({
-  folders: initialFolders,
-  globalNotes: initialGlobalNotes,
-  favoriteNotes: initialFavoriteNotes,
+  folders = [],
+  globalNotes = [],
+  favoriteNotes = [],
   currentNoteId,
   onNavigateToNote = (id) => console.log("Navigate to note:", id),
-  onCreateFolder,
-  onCreateNote,
-  onUpdateFolder,
-  onDeleteFolder,
-  onUpdateNote,
-  onDeleteNote,
+  onCreateFolder = async () => null,
+  onCreateNote = async () => null,
+  onUpdateFolder = async () => {},
+  onDeleteFolder = async () => {},
+  onUpdateNote = async () => {},
+  onDeleteNote = async () => {},
   ...props
 }: AppSidebarProps) {
-  const [folders, setFolders] = React.useState(initialFolders || demoData.folders);
-  const [globalNotes, setGlobalNotes] = React.useState(initialGlobalNotes || demoData.globalNotes);
-  const [favoriteNotes, setFavoriteNotes] = React.useState(initialFavoriteNotes || demoData.favoriteNotes);
-
-  // Create folder handler
-  const handleCreateFolder = React.useCallback(
-    async (parentId?: FolderId) => {
-      const newId = `folder-${Date.now()}`;
-      const newFolder: Folder = {
-        id: { id: newId },
-        name: "",
-        color: DEFAULT_COLORS[Math.floor(Math.random() * DEFAULT_COLORS.length)],
-        parent: parentId,
-        subfolders: [],
-        notes: [],
-      };
-
-      if (parentId) {
-        setFolders((prev) => {
-          const addSubfolderRecursive = (items: Folder[]): Folder[] => {
-            return items.map((item) => {
-              if (item.id.id === parentId.id) {
-                return {
-                  ...item,
-                  subfolders: [...(item.subfolders || []), newFolder],
-                };
-              }
-              if (item.subfolders) {
-                return {
-                  ...item,
-                  subfolders: addSubfolderRecursive(item.subfolders),
-                };
-              }
-              return item;
-            });
-          };
-          return addSubfolderRecursive(prev);
-        });
-      } else {
-        setFolders((prev) => [...prev, newFolder]);
-      }
-
-      if (onCreateFolder) return await onCreateFolder(parentId);
-      return newFolder;
-    },
-    [onCreateFolder],
-  );
-
-  // Create note handler
-  const handleCreateNote = React.useCallback(
-    async (folderId?: FolderId) => {
-      const newId = `note-${Date.now()}`;
-      const newNote: Note = {
-        id: { id: newId },
-        title: "",
-        folder: folderId,
-        content: "",
-      };
-
-      if (folderId) {
-        setFolders((prev) => {
-          const addNoteRecursive = (items: Folder[]): Folder[] => {
-            return items.map((item) => {
-              if (item.id.id === folderId.id) {
-                return {
-                  ...item,
-                  notes: [...(item.notes || []), newNote],
-                };
-              }
-              if (item.subfolders) {
-                return {
-                  ...item,
-                  subfolders: addNoteRecursive(item.subfolders),
-                };
-              }
-              return item;
-            });
-          };
-          return addNoteRecursive(prev);
-        });
-      } else {
-        setGlobalNotes((prev) => [...prev, newNote]);
-      }
-
-      if (onCreateNote) return await onCreateNote(folderId);
-      return newNote;
-    },
-    [onCreateNote],
-  );
-
-  // Update folder handler
-  const handleUpdateFolder = React.useCallback(
-    async (folderId: string, data: Partial<Folder>) => {
-      setFolders((prev) => {
-        const updateRecursive = (items: Folder[]): Folder[] => {
-          return items.map((item) => {
-            if (item.id.id === folderId) {
-              return { ...item, ...data };
-            }
-            if (item.subfolders) {
-              return {
-                ...item,
-                subfolders: updateRecursive(item.subfolders),
-              };
-            }
-            return item;
-          });
-        };
-        return updateRecursive(prev);
-      });
-
-      if (onUpdateFolder) await onUpdateFolder(folderId, data);
-    },
-    [onUpdateFolder],
-  );
-
-  // Delete folder handler
-  const handleDeleteFolder = React.useCallback(
-    async (folderId: FolderId) => {
-      setFolders((prev) => {
-        const deleteRecursive = (items: Folder[]): Folder[] => {
-          return items.filter((item) => {
-            if (item.id.id === folderId.id) return false;
-            if (item.subfolders) {
-              item.subfolders = deleteRecursive(item.subfolders);
-            }
-            return true;
-          });
-        };
-        return deleteRecursive(prev);
-      });
-
-      if (onDeleteFolder) await onDeleteFolder(folderId);
-    },
-    [onDeleteFolder],
-  );
-
-  // Update note handler
-  const handleUpdateNote = React.useCallback(
-    async (noteId: string, data: Partial<Note>) => {
-      // Update in folders
-      setFolders((prev) => {
-        const updateRecursive = (items: Folder[]): Folder[] => {
-          return items.map((item) => {
-            if (item.notes) {
-              item.notes = item.notes.map((note) => (note.id.id === noteId ? { ...note, ...data } : note));
-            }
-            if (item.subfolders) {
-              item.subfolders = updateRecursive(item.subfolders);
-            }
-            return item;
-          });
-        };
-        return updateRecursive(prev);
-      });
-
-      // Update in global notes
-      setGlobalNotes((prev) => prev.map((note) => (note.id.id === noteId ? { ...note, ...data } : note)));
-
-      // Handle favorites
-      if (data.favorite !== undefined) {
-        if (data.favorite) {
-          // Find note and add to favorites
-          const findNote = (): Note | undefined => {
-            const checkGlobal = globalNotes.find((n) => n.id.id === noteId);
-            if (checkGlobal) return checkGlobal;
-
-            const checkFolders = (items: Folder[]): Note | undefined => {
-              for (const folder of items) {
-                const found = folder.notes?.find((n) => n.id.id === noteId);
-                if (found) return found;
-                if (folder.subfolders) {
-                  const subFound = checkFolders(folder.subfolders);
-                  if (subFound) return subFound;
-                }
-              }
-            };
-            return checkFolders(folders);
-          };
-
-          const note = findNote();
-          if (note && !favoriteNotes.find((f) => f.id.id === noteId)) {
-            setFavoriteNotes((prev) => [...prev, { ...note, favorite: true }]);
-          }
-        } else {
-          setFavoriteNotes((prev) => prev.filter((n) => n.id.id !== noteId));
-        }
-      }
-
-      if (onUpdateNote) await onUpdateNote(noteId, data);
-    },
-    [onUpdateNote, globalNotes, folders, favoriteNotes],
-  );
-
-  // Delete note handler
-  const handleDeleteNote = React.useCallback(
-    async (noteId: NoteId) => {
-      // Delete from folders
-      setFolders((prev) => {
-        const deleteRecursive = (items: Folder[]): Folder[] => {
-          return items.map((item) => {
-            if (item.notes) {
-              item.notes = item.notes.filter((note) => note.id.id !== noteId.id);
-            }
-            if (item.subfolders) {
-              item.subfolders = deleteRecursive(item.subfolders);
-            }
-            return item;
-          });
-        };
-        return deleteRecursive(prev);
-      });
-
-      // Delete from global notes
-      setGlobalNotes((prev) => prev.filter((note) => note.id.id !== noteId.id));
-
-      // Delete from favorites
-      setFavoriteNotes((prev) => prev.filter((note) => note.id.id !== noteId.id));
-
-      if (onDeleteNote) await onDeleteNote(noteId);
-    },
-    [onDeleteNote],
-  );
 
   return (
     <Sidebar className="border-r border-sidebar-border" {...props}>
@@ -733,8 +485,8 @@ export function AppSidebar({
                     note={note}
                     depth={0}
                     onNavigate={onNavigateToNote}
-                    onUpdate={handleUpdateNote}
-                    onDelete={handleDeleteNote}
+                    onUpdate={onUpdateNote}
+                    onDelete={onDeleteNote}
                     isActive={currentNoteId === note.id.id}
                   />
                 ))}
@@ -744,33 +496,31 @@ export function AppSidebar({
         )}
 
         {/* Global Notes section */}
-        {globalNotes.length > 0 && (
-          <SidebarGroup>
-            <div className="flex items-center justify-between px-2 mb-1">
-              <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider p-0">
-                Quick Notes
-              </SidebarGroupLabel>
-              <Button variant="ghost" size="icon" className="h-5 w-5 p-0" onClick={() => handleCreateNote()}>
-                <Plus className="h-3 w-3" />
-              </Button>
-            </div>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {globalNotes.map((note) => (
-                  <NoteItem
-                    key={note.id.id}
-                    note={note}
-                    depth={0}
-                    onNavigate={onNavigateToNote}
-                    onUpdate={handleUpdateNote}
-                    onDelete={handleDeleteNote}
-                    isActive={currentNoteId === note.id.id}
-                  />
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        <SidebarGroup>
+          <div className="flex items-center justify-between px-2 mb-1">
+            <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider p-0">
+              Quick Notes
+            </SidebarGroupLabel>
+            <Button variant="ghost" size="icon" className="h-5 w-5 p-0" onClick={() => onCreateNote()}>
+              <Plus className="h-3 w-3" />
+            </Button>
+          </div>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {globalNotes.map((note) => (
+                <NoteItem
+                  key={note.id.id}
+                  note={note}
+                  depth={0}
+                  onNavigate={onNavigateToNote}
+                  onUpdate={onUpdateNote}
+                  onDelete={onDeleteNote}
+                  isActive={currentNoteId === note.id.id}
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
         {/* Folders section */}
         <SidebarGroup>
@@ -778,7 +528,7 @@ export function AppSidebar({
             <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider p-0">
               Folders
             </SidebarGroupLabel>
-            <Button variant="ghost" size="icon" className="h-5 w-5 p-0" onClick={() => handleCreateFolder()}>
+            <Button variant="ghost" size="icon" className="h-5 w-5 p-0" onClick={() => onCreateFolder()}>
               <FolderPlus className="h-3 w-3" />
             </Button>
           </div>
@@ -790,12 +540,12 @@ export function AppSidebar({
                   folder={folder}
                   depth={0}
                   onNavigateToNote={onNavigateToNote}
-                  onCreateFolder={handleCreateFolder}
-                  onCreateNote={handleCreateNote}
-                  onUpdateFolder={handleUpdateFolder}
-                  onDeleteFolder={handleDeleteFolder}
-                  onUpdateNote={handleUpdateNote}
-                  onDeleteNote={handleDeleteNote}
+                  onCreateFolder={onCreateFolder}
+                  onCreateNote={onCreateNote}
+                  onUpdateFolder={onUpdateFolder}
+                  onDeleteFolder={onDeleteFolder}
+                  onUpdateNote={onUpdateNote}
+                  onDeleteNote={onDeleteNote}
                   currentNoteId={currentNoteId}
                 />
               ))}
