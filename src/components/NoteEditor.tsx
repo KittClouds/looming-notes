@@ -11,49 +11,95 @@ import { Text } from '@tiptap/extension-text';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Dropcursor, Gapcursor, Placeholder, TrailingNode } from '@tiptap/extensions';
 
-// Build extensions
-import { Bold, RichTextBold } from 'reactjs-tiptap-editor/bold';
-import { Italic, RichTextItalic } from 'reactjs-tiptap-editor/italic';
-import { RichTextUnderline, TextUnderline } from 'reactjs-tiptap-editor/textunderline';
-import { RichTextStrike, Strike } from 'reactjs-tiptap-editor/strike';
-import { Heading, RichTextHeading } from 'reactjs-tiptap-editor/heading';
-import { BulletList, RichTextBulletList } from 'reactjs-tiptap-editor/bulletlist';
-import { OrderedList, RichTextOrderedList } from 'reactjs-tiptap-editor/orderedlist';
-import { RichTextTaskList, TaskList } from 'reactjs-tiptap-editor/tasklist';
+import 'reactjs-tiptap-editor/style.css';
+import 'prism-code-editor-lightweight/layout.css';
+import 'prism-code-editor-lightweight/themes/github-dark.css';
+import 'katex/dist/katex.min.css';
+import 'easydrawer/styles.css';
+import '@excalidraw/excalidraw/index.css';
+
+// Extensions
+import { Attachment, RichTextAttachment } from 'reactjs-tiptap-editor/attachment';
 import { Blockquote, RichTextBlockquote } from 'reactjs-tiptap-editor/blockquote';
+import { Bold, RichTextBold } from 'reactjs-tiptap-editor/bold';
+import { BulletList, RichTextBulletList } from 'reactjs-tiptap-editor/bulletlist';
+import { Clear, RichTextClear } from 'reactjs-tiptap-editor/clear';
 import { Code, RichTextCode } from 'reactjs-tiptap-editor/code';
 import { CodeBlock, RichTextCodeBlock } from 'reactjs-tiptap-editor/codeblock';
-import { Link, RichTextLink } from 'reactjs-tiptap-editor/link';
-import { Image, RichTextImage } from 'reactjs-tiptap-editor/image';
-import { HorizontalRule, RichTextHorizontalRule } from 'reactjs-tiptap-editor/horizontalrule';
-import { History, RichTextRedo, RichTextUndo } from 'reactjs-tiptap-editor/history';
 import { Color, RichTextColor } from 'reactjs-tiptap-editor/color';
+import { Column, ColumnNode, MultipleColumnNode, RichTextColumn } from 'reactjs-tiptap-editor/column';
+import { Emoji, RichTextEmoji } from 'reactjs-tiptap-editor/emoji';
+import { ExportPdf, RichTextExportPdf } from 'reactjs-tiptap-editor/exportpdf';
+import { ExportWord, RichTextExportWord } from 'reactjs-tiptap-editor/exportword';
+import { FontFamily, RichTextFontFamily } from 'reactjs-tiptap-editor/fontfamily';
+import { FontSize, RichTextFontSize } from 'reactjs-tiptap-editor/fontsize';
+import { Heading, RichTextHeading } from 'reactjs-tiptap-editor/heading';
 import { Highlight, RichTextHighlight } from 'reactjs-tiptap-editor/highlight';
-import { RichTextAlign, TextAlign } from 'reactjs-tiptap-editor/textalign';
-import { Clear, RichTextClear } from 'reactjs-tiptap-editor/clear';
+import { History, RichTextRedo, RichTextUndo } from 'reactjs-tiptap-editor/history';
+import { HorizontalRule, RichTextHorizontalRule } from 'reactjs-tiptap-editor/horizontalrule';
+import { Iframe, RichTextIframe } from 'reactjs-tiptap-editor/iframe';
+import { Image, RichTextImage } from 'reactjs-tiptap-editor/image';
+import { ImageGif, RichTextImageGif } from 'reactjs-tiptap-editor/imagegif';
+import { ImportWord, RichTextImportWord } from 'reactjs-tiptap-editor/importword';
+import { Indent, RichTextIndent } from 'reactjs-tiptap-editor/indent';
+import { Italic, RichTextItalic } from 'reactjs-tiptap-editor/italic';
+import { LineHeight, RichTextLineHeight } from 'reactjs-tiptap-editor/lineheight';
+import { Link, RichTextLink } from 'reactjs-tiptap-editor/link';
+import { Mention } from 'reactjs-tiptap-editor/mention';
+import { MoreMark, RichTextMoreMark } from 'reactjs-tiptap-editor/moremark';
+import { OrderedList, RichTextOrderedList } from 'reactjs-tiptap-editor/orderedlist';
 import { RichTextSearchAndReplace, SearchAndReplace } from 'reactjs-tiptap-editor/searchandreplace';
+import { RichTextStrike, Strike } from 'reactjs-tiptap-editor/strike';
 import { RichTextTable, Table } from 'reactjs-tiptap-editor/table';
-
-// Bubble menus
-import {
-  RichTextBubbleLink,
-  RichTextBubbleText,
-  RichTextBubbleImage,
-  RichTextBubbleTable,
-} from 'reactjs-tiptap-editor/bubble';
-
-// Slash Command
+import { RichTextTaskList, TaskList } from 'reactjs-tiptap-editor/tasklist';
+import { RichTextAlign, TextAlign } from 'reactjs-tiptap-editor/textalign';
+import { RichTextTextDirection, TextDirection } from 'reactjs-tiptap-editor/textdirection';
+import { RichTextUnderline, TextUnderline } from 'reactjs-tiptap-editor/textunderline';
+import { RichTextVideo, Video } from 'reactjs-tiptap-editor/video';
+import { Katex, RichTextKatex } from 'reactjs-tiptap-editor/katex';
+import { Drawer, RichTextDrawer } from 'reactjs-tiptap-editor/drawer';
+import { Excalidraw, RichTextExcalidraw } from 'reactjs-tiptap-editor/excalidraw';
+import { Twitter, RichTextTwitter } from 'reactjs-tiptap-editor/twitter';
+import { Mermaid, RichTextMermaid } from 'reactjs-tiptap-editor/mermaid';
+import { CodeView, RichTextCodeView } from 'reactjs-tiptap-editor/codeview';
 import { SlashCommand, SlashCommandList } from 'reactjs-tiptap-editor/slashcommand';
 
-import { Check, Cloud, Loader2 } from 'lucide-react';
+// Bubble
+import {
+  RichTextBubbleColumns,
+  RichTextBubbleDrawer,
+  RichTextBubbleExcalidraw,
+  RichTextBubbleIframe,
+  RichTextBubbleImage,
+  RichTextBubbleImageGif,
+  RichTextBubbleKatex,
+  RichTextBubbleLink,
+  RichTextBubbleMermaid,
+  RichTextBubbleTable,
+  RichTextBubbleText,
+  RichTextBubbleTwitter,
+  RichTextBubbleVideo
+} from 'reactjs-tiptap-editor/bubble';
 
-// Custom document
-const DocumentExtended = Document.extend({
-  content: '(block)+',
+function convertBase64ToBlob(base64: string) {
+  const arr = base64.split(',');
+  const mime = arr[0].match(/:(.*?);/)![1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+}
+
+// Custom document to support columns
+const DocumentColumn = Document.extend({
+  content: '(block|columns)+',
 });
 
 const BaseKit = [
-  DocumentExtended,
+  DocumentColumn,
   Text,
   Dropcursor,
   Gapcursor,
@@ -63,7 +109,7 @@ const BaseKit = [
   ListItem,
   TextStyle,
   Placeholder.configure({
-    placeholder: "Press '/' for commands, or start writing...",
+    placeholder: "Start writing your note...",
   }),
 ];
 
@@ -72,16 +118,22 @@ const extensions = [
   History,
   SearchAndReplace,
   Clear,
-  Heading.configure({ levels: [1, 2, 3, 4] }),
+  FontFamily,
+  Heading,
+  FontSize,
   Bold,
   Italic,
   TextUnderline,
   Strike,
+  MoreMark,
+  Emoji,
   Color,
   Highlight,
   BulletList,
   OrderedList,
   TextAlign.configure({ types: ['heading', 'paragraph'] }),
+  Indent,
+  LineHeight,
   TaskList,
   Link,
   Image.configure({
@@ -93,122 +145,165 @@ const extensions = [
       });
     },
   }),
+  Video.configure({
+    upload: (files: File) => {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(URL.createObjectURL(files));
+        }, 300);
+      });
+    },
+  }),
+  ImageGif,
   Blockquote,
   HorizontalRule,
   Code,
   CodeBlock,
+  Column,
+  ColumnNode,
+  MultipleColumnNode,
   Table,
+  Iframe,
+  ExportPdf,
+  ImportWord,
+  ExportWord,
+  TextDirection,
+  Mention,
+  Attachment.configure({
+    upload: (file: any) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const blob = convertBase64ToBlob(reader.result as string);
+          resolve(URL.createObjectURL(blob));
+        }, 300);
+      });
+    },
+  }),
+  Katex,
+  Excalidraw,
+  Mermaid.configure({
+    upload: (file: any) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const blob = convertBase64ToBlob(reader.result as string);
+          resolve(URL.createObjectURL(blob));
+        }, 300);
+      });
+    },
+  }),
+  Drawer.configure({
+    upload: (file: any) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const blob = convertBase64ToBlob(reader.result as string);
+          resolve(URL.createObjectURL(blob));
+        }, 300);
+      });
+    },
+  }),
+  Twitter,
+  CodeView,
   SlashCommand,
 ];
 
-const DEFAULT_CONTENT = `<h1>Welcome to your Notes</h1><p>Start writing here, or press <code>/</code> for commands...</p><p></p>`;
-
-function debounce<T extends (...args: any[]) => any>(func: T, wait: number) {
-  let timeout: ReturnType<typeof setTimeout>;
-  return function (this: any, ...args: Parameters<T>) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), wait);
-  };
-}
-
-interface SaveStatus {
-  status: 'idle' | 'saving' | 'saved';
-  lastSaved?: Date;
-}
-
 const RichTextToolbar = () => {
   return (
-    <div className="flex items-center p-2 gap-1 flex-wrap border-b border-toolbar-border bg-toolbar-bg rounded-t-lg">
-      <div className="flex items-center gap-0.5 pr-2 border-r border-border">
+    <div className="flex items-center p-1 gap-1 flex-wrap border-b border-border bg-muted/50">
+      {/* Row 1 */}
+      <div className="flex items-center gap-0.5">
         <RichTextUndo />
         <RichTextRedo />
+        <RichTextSearchAndReplace />
+        <RichTextClear />
       </div>
-      <div className="flex items-center gap-0.5 px-2 border-r border-border">
+      <div className="w-px h-6 bg-border" />
+      <div className="flex items-center gap-0.5">
+        <RichTextFontFamily />
         <RichTextHeading />
+        <RichTextFontSize />
       </div>
-      <div className="flex items-center gap-0.5 px-2 border-r border-border">
+      <div className="w-px h-6 bg-border" />
+      <div className="flex items-center gap-0.5">
         <RichTextBold />
         <RichTextItalic />
         <RichTextUnderline />
         <RichTextStrike />
+        <RichTextMoreMark />
       </div>
-      <div className="flex items-center gap-0.5 px-2 border-r border-border">
+      <div className="w-px h-6 bg-border" />
+      <div className="flex items-center gap-0.5">
+        <RichTextEmoji />
         <RichTextColor />
         <RichTextHighlight />
       </div>
-      <div className="flex items-center gap-0.5 px-2 border-r border-border">
+      <div className="w-px h-6 bg-border" />
+      <div className="flex items-center gap-0.5">
         <RichTextBulletList />
         <RichTextOrderedList />
         <RichTextTaskList />
       </div>
-      <div className="flex items-center gap-0.5 px-2 border-r border-border">
+      <div className="w-px h-6 bg-border" />
+      <div className="flex items-center gap-0.5">
         <RichTextAlign />
+        <RichTextIndent />
+        <RichTextLineHeight />
       </div>
-      <div className="flex items-center gap-0.5 px-2 border-r border-border">
+      <div className="w-px h-6 bg-border" />
+      <div className="flex items-center gap-0.5">
         <RichTextLink />
         <RichTextImage />
-        <RichTextTable />
+        <RichTextVideo />
+        <RichTextImageGif />
       </div>
-      <div className="flex items-center gap-0.5 px-2 border-r border-border">
+      <div className="w-px h-6 bg-border" />
+      <div className="flex items-center gap-0.5">
         <RichTextBlockquote />
+        <RichTextHorizontalRule />
         <RichTextCode />
         <RichTextCodeBlock />
-        <RichTextHorizontalRule />
       </div>
-      <div className="flex items-center gap-0.5 px-2">
-        <RichTextSearchAndReplace />
-        <RichTextClear />
+      <div className="w-px h-6 bg-border" />
+      <div className="flex items-center gap-0.5">
+        <RichTextColumn />
+        <RichTextTable />
+        <RichTextIframe />
       </div>
-    </div>
-  );
-};
-
-const SaveIndicator = ({ status }: { status: SaveStatus }) => {
-  return (
-    <div className={`save-indicator ${status.status}`}>
-      {status.status === 'saving' && (
-        <>
-          <Loader2 className="w-3 h-3 animate-spin" />
-          <span>Saving...</span>
-        </>
-      )}
-      {status.status === 'saved' && (
-        <>
-          <Cloud className="w-3 h-3" />
-          <Check className="w-3 h-3 text-success" />
-          <span>Saved</span>
-        </>
-      )}
+      <div className="w-px h-6 bg-border" />
+      <div className="flex items-center gap-0.5">
+        <RichTextExportPdf />
+        <RichTextImportWord />
+        <RichTextExportWord />
+      </div>
+      <div className="w-px h-6 bg-border" />
+      <div className="flex items-center gap-0.5">
+        <RichTextTextDirection />
+        <RichTextAttachment />
+        <RichTextKatex />
+        <RichTextExcalidraw />
+        <RichTextMermaid />
+        <RichTextDrawer />
+        <RichTextTwitter />
+        <RichTextCodeView />
+      </div>
     </div>
   );
 };
 
 export function NoteEditor() {
-  const [content, setContent] = useState(DEFAULT_CONTENT);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>({ status: 'idle' });
+  const [content, setContent] = useState('');
 
-  const simulateSave = useCallback(
-    debounce(() => {
-      setSaveStatus({ status: 'saving' });
-      // Simulate saving to cloud
-      setTimeout(() => {
-        setSaveStatus({ status: 'saved', lastSaved: new Date() });
-        // Reset to idle after showing saved
-        setTimeout(() => {
-          setSaveStatus({ status: 'idle' });
-        }, 2000);
-      }, 500);
-    }, 1000),
-    []
-  );
-
-  const onValueChange = useCallback(
-    (value: string) => {
-      setContent(value);
-      simulateSave();
-    },
-    [simulateSave]
-  );
+  const onValueChange = useCallback((value: string) => {
+    setContent(value);
+  }, []);
 
   const editor = useEditor({
     content,
@@ -227,35 +322,33 @@ export function NoteEditor() {
   }, [editor]);
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Editor Header */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-border">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-serif font-medium text-foreground">Untitled Note</h2>
-        </div>
-        <SaveIndicator status={saveStatus} />
-      </div>
-
-      {/* Editor Content */}
-      <div className="flex-1 overflow-auto p-6">
-        <RichTextProvider editor={editor}>
-          <div className="editor-wrapper overflow-hidden border border-border">
-            <RichTextToolbar />
-            <div className="bg-editor-bg min-h-[500px]">
-              <EditorContent editor={editor} className="prose prose-neutral dark:prose-invert max-w-none" />
-            </div>
-
-            {/* Bubble Menus */}
-            <RichTextBubbleText />
-            <RichTextBubbleLink />
-            <RichTextBubbleImage />
-            <RichTextBubbleTable />
-
-            {/* Slash Command */}
-            <SlashCommandList />
+    <div className="flex flex-col h-full w-full">
+      <RichTextProvider editor={editor}>
+        <div className="flex flex-col h-full overflow-hidden border border-border rounded-lg">
+          <RichTextToolbar />
+          <div className="flex-1 overflow-auto bg-background">
+            <EditorContent editor={editor} className="min-h-[500px] p-4" />
           </div>
-        </RichTextProvider>
-      </div>
+
+          {/* Bubble Menus */}
+          <RichTextBubbleText />
+          <RichTextBubbleLink />
+          <RichTextBubbleImage />
+          <RichTextBubbleVideo />
+          <RichTextBubbleImageGif />
+          <RichTextBubbleTable />
+          <RichTextBubbleColumns />
+          <RichTextBubbleDrawer />
+          <RichTextBubbleExcalidraw />
+          <RichTextBubbleIframe />
+          <RichTextBubbleKatex />
+          <RichTextBubbleMermaid />
+          <RichTextBubbleTwitter />
+
+          {/* Slash Command */}
+          <SlashCommandList />
+        </div>
+      </RichTextProvider>
     </div>
   );
 }
