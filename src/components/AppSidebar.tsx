@@ -1,8 +1,8 @@
-import * as React from "react"
-import { 
-  ChevronRight, 
+import * as React from "react";
+import {
+  ChevronRight,
   ChevronDown,
-  Folder, 
+  Folder,
   FolderOpen,
   Plus,
   MoreVertical,
@@ -12,14 +12,11 @@ import {
   X,
   FileText,
   Search,
-  Settings
-} from "lucide-react"
+  Settings,
+  FolderPlus,
+} from "lucide-react";
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -33,113 +30,125 @@ import {
   SidebarRail,
   SidebarHeader,
   SidebarFooter,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 // Color palette for folders
-const DEFAULT_COLORS = [
-  "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", 
-  "#f59e0b", "#ef4444", "#14b8a6", "#6366f1"
-]
+const DEFAULT_COLORS = ["#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#ef4444", "#14b8a6", "#6366f1"];
 
-// Types matching blink's structure
-interface PageId {
-  id: string
+// Core data types
+interface FolderId {
+  id: string;
 }
 
-interface Page {
-  id: PageId
-  title: string
-  favorite?: boolean
-  color?: string
-  parent?: PageId
-  children?: Page[]
+interface NoteId {
+  id: string;
 }
 
-interface InklingProps {
-  page: Page
-  depth?: number
-  parentColor?: string
-  onNavigate: (pageId: string) => void
-  onCreateChild: (parentId: PageId) => Promise<Page | null>
-  onUpdate: (pageId: string, data: Partial<Page>) => Promise<void>
-  onDelete: (pageId: PageId) => Promise<void>
-  isActive: boolean
+interface Folder {
+  id: FolderId;
+  name: string;
+  color?: string;
+  parent?: FolderId;
+  subfolders?: Folder[];
+  notes?: Note[];
 }
 
-function Inkling({ 
-  page, 
+interface Note {
+  id: NoteId;
+  title: string;
+  favorite?: boolean;
+  folder?: FolderId;
+  content?: string;
+}
+
+// Props for folder component
+interface FolderItemProps {
+  folder: Folder;
+  depth?: number;
+  parentColor?: string;
+  onNavigateToNote: (noteId: string) => void;
+  onCreateFolder: (parentId: FolderId) => Promise<Folder | null>;
+  onCreateNote: (folderId?: FolderId) => Promise<Note | null>;
+  onUpdateFolder: (folderId: string, data: Partial<Folder>) => Promise<void>;
+  onDeleteFolder: (folderId: FolderId) => Promise<void>;
+  onUpdateNote: (noteId: string, data: Partial<Note>) => Promise<void>;
+  onDeleteNote: (noteId: NoteId) => Promise<void>;
+  currentNoteId?: string;
+}
+
+function FolderItem({
+  folder,
   depth = 0,
   parentColor,
-  onNavigate,
-  onCreateChild,
-  onUpdate,
-  onDelete,
-  isActive,
-}: InklingProps) {
-  const [isExpanded, setIsExpanded] = React.useState(false)
-  const [isHovered, setIsHovered] = React.useState(false)
-  
-  const folderColor = page.color || parentColor || DEFAULT_COLORS[depth % DEFAULT_COLORS.length]
-  const hasChildren = (page.children?.length || 0) > 0
+  onNavigateToNote,
+  onCreateFolder,
+  onCreateNote,
+  onUpdateFolder,
+  onDeleteFolder,
+  onUpdateNote,
+  onDeleteNote,
+  currentNoteId,
+}: FolderItemProps) {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [isHovered, setIsHovered] = React.useState(false);
 
-  const handleCopyLink = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    const url = `${window.location.origin}/inkling/${page.id.id}`
-    navigator.clipboard.writeText(url)
-  }
+  const folderColor = folder.color || parentColor || DEFAULT_COLORS[depth % DEFAULT_COLORS.length];
+  const hasContent = (folder.subfolders?.length || 0) > 0 || (folder.notes?.length || 0) > 0;
 
-  const handleCreateChild = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
-    const newPage = await onCreateChild(page.id)
-    if (newPage) {
-      setIsExpanded(true)
-      onNavigate(newPage.id.id)
+  const handleCreateSubfolder = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const newFolder = await onCreateFolder(folder.id);
+    if (newFolder) {
+      setIsExpanded(true);
     }
-  }
+  };
 
-  const handleToggleFavorite = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    await onUpdate(page.id.id, { favorite: !page.favorite })
-  }
+  const handleCreateNote = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const newNote = await onCreateNote(folder.id);
+    if (newNote) {
+      setIsExpanded(true);
+      onNavigateToNote(newNote.id.id);
+    }
+  };
 
   const handleChangeColor = async (e: React.MouseEvent, color: string) => {
-    e.preventDefault()
-    e.stopPropagation()
-    await onUpdate(page.id.id, { color })
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    await onUpdateFolder(folder.id.id, { color });
+  };
 
-  const handleDelete = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    await onDelete(page.id)
-  }
+  const handleDeleteFolder = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await onDeleteFolder(folder.id);
+  };
 
   return (
     <div className="relative w-full">
       {/* Tree lines */}
       {depth > 0 && (
         <>
-          <div 
+          <div
             className="absolute top-0 bottom-0 w-[2px] opacity-40 pointer-events-none"
             style={{
               left: `${(depth - 1) * 20 + 10}px`,
               borderLeft: `2px solid ${folderColor}`,
             }}
           />
-          <div 
+          <div
             className="absolute top-[18px] w-3 h-[2px] opacity-40 pointer-events-none"
             style={{
               left: `${(depth - 1) * 20 + 10}px`,
@@ -149,83 +158,61 @@ function Inkling({
         </>
       )}
 
-      <SidebarMenuItem 
+      <SidebarMenuItem
         className="relative z-10"
         style={{ paddingLeft: `${depth * 20}px` }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <Collapsible
-          open={isExpanded}
-          onOpenChange={setIsExpanded}
-          className="group/collapsible w-full"
-        >
+        <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="group/collapsible w-full">
           <div className="flex items-center gap-1 w-full">
             <CollapsibleTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn(
-                  "h-6 w-6 p-0 shrink-0",
-                  !isHovered && !hasChildren && "invisible"
-                )}
-                disabled={!hasChildren}
+                className={cn("h-6 w-6 p-0 shrink-0", !hasContent && "invisible")}
+                disabled={!hasContent}
               >
-                {isExpanded ? (
-                  <ChevronDown className="h-3 w-3" />
-                ) : (
-                  <ChevronRight className="h-3 w-3" />
-                )}
+                {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
               </Button>
             </CollapsibleTrigger>
 
-            <SidebarMenuButton
-              onClick={() => onNavigate(page.id.id)}
-              isActive={isActive}
-              className={cn(
-                "flex-1 justify-start gap-2 h-8"
-              )}
-            >
+            <div className="flex-1 flex items-center gap-2">
               {isExpanded ? (
                 <FolderOpen className="h-4 w-4 shrink-0" style={{ color: folderColor }} />
               ) : (
                 <Folder className="h-4 w-4 shrink-0" style={{ color: folderColor }} />
               )}
-              <span className="truncate text-sm">
-                {page.title || "New Inkling"}
-              </span>
-              {page.favorite && (
-                <Star className="h-3 w-3 shrink-0 fill-yellow-400 text-yellow-400 ml-auto" />
-              )}
-            </SidebarMenuButton>
+              <span className="truncate text-sm font-medium">{folder.name || "New Folder"}</span>
+            </div>
 
             {/* Action buttons - show on hover */}
-            <div className={cn(
-              "flex items-center shrink-0",
-              !isHovered && "invisible"
-            )}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 p-0"
-                onClick={handleCreateChild}
-              >
+            <div className={cn("flex items-center shrink-0 gap-1", !isHovered && "invisible")}>
+              <Button variant="ghost" size="icon" className="h-6 w-6 p-0" onClick={handleCreateNote} title="Add note">
                 <Plus className="h-3 w-3" />
               </Button>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 p-0"
-                  >
+                  <Button variant="ghost" size="icon" className="h-6 w-6 p-0">
                     <MoreVertical className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={handleCreateSubfolder}>
+                    <FolderPlus className="mr-2 h-4 w-4" />
+                    New subfolder
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem onClick={handleCreateNote}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    New note
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
                   <div className="p-2">
-                    <div className="text-sm font-medium mb-2">Change Color</div>
+                    <div className="text-sm font-medium mb-2">Folder Color</div>
                     <div className="flex flex-wrap gap-2">
                       {DEFAULT_COLORS.map((color) => (
                         <button
@@ -234,42 +221,19 @@ function Inkling({
                           className="w-6 h-6 rounded border-2 hover:scale-110 transition-transform cursor-pointer"
                           style={{
                             backgroundColor: color,
-                            borderColor: color === folderColor ? '#000' : 'transparent',
+                            borderColor: color === folderColor ? "#000" : "transparent",
                           }}
                           aria-label={`Change color to ${color}`}
                         />
                       ))}
                     </div>
                   </div>
+
                   <DropdownMenuSeparator />
-                  
-                  <DropdownMenuItem onClick={handleToggleFavorite}>
-                    {page.favorite ? (
-                      <>
-                        <StarOff className="mr-2 h-4 w-4" />
-                        Remove from favorites
-                      </>
-                    ) : (
-                      <>
-                        <Star className="mr-2 h-4 w-4" />
-                        Save to favorites
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuItem onClick={handleCopyLink}>
-                    <LinkIcon className="mr-2 h-4 w-4" />
-                    Copy link to clipboard
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuSeparator />
-                  
-                  <DropdownMenuItem 
-                    onClick={handleDelete}
-                    className="text-destructive focus:text-destructive"
-                  >
+
+                  <DropdownMenuItem onClick={handleDeleteFolder} className="text-destructive focus:text-destructive">
                     <X className="mr-2 h-4 w-4" />
-                    Remove inkling
+                    Delete folder
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -278,26 +242,44 @@ function Inkling({
 
           <CollapsibleContent>
             <SidebarMenuSub className="ml-0 pl-0 border-l-0">
-              {hasChildren ? (
-                page.children!.map((child) => (
-                  <Inkling
-                    key={child.id.id}
-                    page={child}
-                    depth={depth + 1}
-                    parentColor={folderColor}
-                    onNavigate={onNavigate}
-                    onCreateChild={onCreateChild}
-                    onUpdate={onUpdate}
-                    onDelete={onDelete}
-                    isActive={false}
-                  />
-                ))
-              ) : (
-                <div 
+              {/* Render subfolders */}
+              {folder.subfolders?.map((subfolder) => (
+                <FolderItem
+                  key={subfolder.id.id}
+                  folder={subfolder}
+                  depth={depth + 1}
+                  parentColor={folderColor}
+                  onNavigateToNote={onNavigateToNote}
+                  onCreateFolder={onCreateFolder}
+                  onCreateNote={onCreateNote}
+                  onUpdateFolder={onUpdateFolder}
+                  onDeleteFolder={onDeleteFolder}
+                  onUpdateNote={onUpdateNote}
+                  onDeleteNote={onDeleteNote}
+                  currentNoteId={currentNoteId}
+                />
+              ))}
+
+              {/* Render notes in this folder */}
+              {folder.notes?.map((note) => (
+                <NoteItem
+                  key={note.id.id}
+                  note={note}
+                  depth={depth + 1}
+                  folderColor={folderColor}
+                  onNavigate={onNavigateToNote}
+                  onUpdate={onUpdateNote}
+                  onDelete={onDeleteNote}
+                  isActive={currentNoteId === note.id.id}
+                />
+              ))}
+
+              {!hasContent && (
+                <div
                   className="text-xs text-muted-foreground py-1 italic"
                   style={{ paddingLeft: `${(depth + 1) * 20 + 16}px` }}
                 >
-                  No pages here
+                  Empty folder
                 </div>
               )}
             </SidebarMenuSub>
@@ -305,220 +287,417 @@ function Inkling({
         </Collapsible>
       </SidebarMenuItem>
     </div>
-  )
+  );
+}
+
+// Props for note component
+interface NoteItemProps {
+  note: Note;
+  depth: number;
+  folderColor?: string;
+  onNavigate: (noteId: string) => void;
+  onUpdate: (noteId: string, data: Partial<Note>) => Promise<void>;
+  onDelete: (noteId: NoteId) => Promise<void>;
+  isActive: boolean;
+}
+
+function NoteItem({ note, depth, folderColor, onNavigate, onUpdate, onDelete, isActive }: NoteItemProps) {
+  const [isHovered, setIsHovered] = React.useState(false);
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = `${window.location.origin}/note/${note.id.id}`;
+    navigator.clipboard.writeText(url);
+  };
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await onUpdate(note.id.id, { favorite: !note.favorite });
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await onDelete(note.id);
+  };
+
+  return (
+    <div className="relative w-full">
+      {/* Tree line connector for notes */}
+      {depth > 0 && folderColor && (
+        <>
+          <div
+            className="absolute top-0 bottom-0 w-[2px] opacity-40 pointer-events-none"
+            style={{
+              left: `${(depth - 1) * 20 + 10}px`,
+              borderLeft: `2px solid ${folderColor}`,
+            }}
+          />
+          <div
+            className="absolute top-[18px] w-3 h-[2px] opacity-40 pointer-events-none"
+            style={{
+              left: `${(depth - 1) * 20 + 10}px`,
+              backgroundColor: folderColor,
+            }}
+          />
+        </>
+      )}
+
+      <SidebarMenuItem
+        className="relative z-10"
+        style={{ paddingLeft: `${depth * 20}px` }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="flex items-center gap-1 w-full">
+          <div className="h-6 w-6" /> {/* Spacer for alignment */}
+          <SidebarMenuButton
+            onClick={() => onNavigate(note.id.id)}
+            isActive={isActive}
+            className={cn("flex-1 justify-start gap-2 h-8")}
+          >
+            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="truncate text-sm">{note.title || "Untitled Note"}</span>
+            {note.favorite && <Star className="h-3 w-3 shrink-0 fill-yellow-400 text-yellow-400 ml-auto" />}
+          </SidebarMenuButton>
+          {/* Action buttons - show on hover */}
+          <div className={cn("flex items-center shrink-0", !isHovered && "invisible")}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-6 w-6 p-0">
+                  <MoreVertical className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={handleToggleFavorite}>
+                  {note.favorite ? (
+                    <>
+                      <StarOff className="mr-2 h-4 w-4" />
+                      Remove from favorites
+                    </>
+                  ) : (
+                    <>
+                      <Star className="mr-2 h-4 w-4" />
+                      Add to favorites
+                    </>
+                  )}
+                </DropdownMenuItem>
+
+                <DropdownMenuItem onClick={handleCopyLink}>
+                  <LinkIcon className="mr-2 h-4 w-4" />
+                  Copy link
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                  <X className="mr-2 h-4 w-4" />
+                  Delete note
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </SidebarMenuItem>
+    </div>
+  );
 }
 
 // Main sidebar component
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  pages?: {
-    favorites: Page[]
-    inklings: Page[]
-  }
-  currentPageId?: string
-  onNavigate?: (pageId: string) => void
-  onCreatePage?: (parent?: PageId) => Promise<Page | null>
-  onUpdatePage?: (pageId: string, data: Partial<Page>) => Promise<void>
-  onDeletePage?: (pageId: PageId) => Promise<void>
+  folders?: Folder[];
+  globalNotes?: Note[];
+  favoriteNotes?: Note[];
+  currentNoteId?: string;
+  onNavigateToNote?: (noteId: string) => void;
+  onCreateFolder?: (parentId?: FolderId) => Promise<Folder | null>;
+  onCreateNote?: (folderId?: FolderId) => Promise<Note | null>;
+  onUpdateFolder?: (folderId: string, data: Partial<Folder>) => Promise<void>;
+  onDeleteFolder?: (folderId: FolderId) => Promise<void>;
+  onUpdateNote?: (noteId: string, data: Partial<Note>) => Promise<void>;
+  onDeleteNote?: (noteId: NoteId) => Promise<void>;
 }
 
-// Demo data with nested structure
-const demoPages: { favorites: Page[], inklings: Page[] } = {
-  favorites: [
-    { 
-      id: { id: 'fav-1' }, 
-      title: 'Getting Started', 
-      favorite: true, 
-      color: '#3b82f6',
-      children: []
+// Demo data with proper structure
+const demoData = {
+  folders: [
+    {
+      id: { id: "folder-1" },
+      name: "Work",
+      color: "#10b981",
+      subfolders: [
+        {
+          id: { id: "folder-1-1" },
+          name: "Projects",
+          color: "#10b981",
+          notes: [{ id: { id: "note-1-1-1" }, title: "Project Alpha", folder: { id: "folder-1-1" } }],
+        },
+      ],
+      notes: [
+        { id: { id: "note-1-1" }, title: "Meeting Notes", folder: { id: "folder-1" } },
+        { id: { id: "note-1-2" }, title: "Tasks", folder: { id: "folder-1" } },
+      ],
+    },
+    {
+      id: { id: "folder-2" },
+      name: "Personal",
+      color: "#8b5cf6",
+      notes: [{ id: { id: "note-2-1" }, title: "Journal Entry", folder: { id: "folder-2" } }],
+    },
+    {
+      id: { id: "folder-3" },
+      name: "Ideas",
+      color: "#f59e0b",
+      subfolders: [],
+      notes: [],
     },
   ],
-  inklings: [
-    { 
-      id: { id: 'ink-1' }, 
-      title: 'Work', 
-      color: '#10b981',
-      children: []
-    },
-    { 
-      id: { id: 'ink-2' }, 
-      title: 'Personal', 
-      color: '#8b5cf6',
-      children: [
-        {
-          id: { id: 'ink-2-1' },
-          title: 'Journal',
-          color: '#8b5cf6',
-          children: []
-        }
-      ]
-    },
-    { 
-      id: { id: 'ink-3' }, 
-      title: 'Ideas', 
-      color: '#f59e0b',
-      children: []
-    },
-  ]
-}
+  globalNotes: [
+    { id: { id: "global-1" }, title: "Quick Thoughts", favorite: false },
+    { id: { id: "global-2" }, title: "Scratch Pad", favorite: false },
+  ],
+  favoriteNotes: [{ id: { id: "fav-1" }, title: "Important Reference", favorite: true }],
+};
 
-export function AppSidebar({ 
-  pages: initialPages,
-  currentPageId,
-  onNavigate = (id) => console.log('Navigate to:', id),
-  onCreatePage,
-  onUpdatePage,
-  onDeletePage,
-  ...props 
+export function AppSidebar({
+  folders: initialFolders,
+  globalNotes: initialGlobalNotes,
+  favoriteNotes: initialFavoriteNotes,
+  currentNoteId,
+  onNavigateToNote = (id) => console.log("Navigate to note:", id),
+  onCreateFolder,
+  onCreateNote,
+  onUpdateFolder,
+  onDeleteFolder,
+  onUpdateNote,
+  onDeleteNote,
+  ...props
 }: AppSidebarProps) {
-  // State to manage pages internally for demo purposes
-  const [pages, setPages] = React.useState(initialPages || demoPages)
+  const [folders, setFolders] = React.useState(initialFolders || demoData.folders);
+  const [globalNotes, setGlobalNotes] = React.useState(initialGlobalNotes || demoData.globalNotes);
+  const [favoriteNotes, setFavoriteNotes] = React.useState(initialFavoriteNotes || demoData.favoriteNotes);
 
-  // Default handlers with state management
-  const handleCreatePage = React.useCallback(async (parent?: PageId) => {
-    const newId = `page-${Date.now()}`
-    const newPage: Page = {
-      id: { id: newId },
-      title: '',
-      color: DEFAULT_COLORS[Math.floor(Math.random() * DEFAULT_COLORS.length)],
-      parent: parent,
-      children: []
-    }
+  // Create folder handler
+  const handleCreateFolder = React.useCallback(
+    async (parentId?: FolderId) => {
+      const newId = `folder-${Date.now()}`;
+      const newFolder: Folder = {
+        id: { id: newId },
+        name: "",
+        color: DEFAULT_COLORS[Math.floor(Math.random() * DEFAULT_COLORS.length)],
+        parent: parentId,
+        subfolders: [],
+        notes: [],
+      };
 
-    if (parent) {
-      // Add as child
-      setPages(prev => {
-        const addChildRecursive = (items: Page[]): Page[] => {
-          return items.map(item => {
-            if (item.id.id === parent.id) {
+      if (parentId) {
+        setFolders((prev) => {
+          const addSubfolderRecursive = (items: Folder[]): Folder[] => {
+            return items.map((item) => {
+              if (item.id.id === parentId.id) {
+                return {
+                  ...item,
+                  subfolders: [...(item.subfolders || []), newFolder],
+                };
+              }
+              if (item.subfolders) {
+                return {
+                  ...item,
+                  subfolders: addSubfolderRecursive(item.subfolders),
+                };
+              }
+              return item;
+            });
+          };
+          return addSubfolderRecursive(prev);
+        });
+      } else {
+        setFolders((prev) => [...prev, newFolder]);
+      }
+
+      if (onCreateFolder) return await onCreateFolder(parentId);
+      return newFolder;
+    },
+    [onCreateFolder],
+  );
+
+  // Create note handler
+  const handleCreateNote = React.useCallback(
+    async (folderId?: FolderId) => {
+      const newId = `note-${Date.now()}`;
+      const newNote: Note = {
+        id: { id: newId },
+        title: "",
+        folder: folderId,
+        content: "",
+      };
+
+      if (folderId) {
+        setFolders((prev) => {
+          const addNoteRecursive = (items: Folder[]): Folder[] => {
+            return items.map((item) => {
+              if (item.id.id === folderId.id) {
+                return {
+                  ...item,
+                  notes: [...(item.notes || []), newNote],
+                };
+              }
+              if (item.subfolders) {
+                return {
+                  ...item,
+                  subfolders: addNoteRecursive(item.subfolders),
+                };
+              }
+              return item;
+            });
+          };
+          return addNoteRecursive(prev);
+        });
+      } else {
+        setGlobalNotes((prev) => [...prev, newNote]);
+      }
+
+      if (onCreateNote) return await onCreateNote(folderId);
+      return newNote;
+    },
+    [onCreateNote],
+  );
+
+  // Update folder handler
+  const handleUpdateFolder = React.useCallback(
+    async (folderId: string, data: Partial<Folder>) => {
+      setFolders((prev) => {
+        const updateRecursive = (items: Folder[]): Folder[] => {
+          return items.map((item) => {
+            if (item.id.id === folderId) {
+              return { ...item, ...data };
+            }
+            if (item.subfolders) {
               return {
                 ...item,
-                children: [...(item.children || []), newPage]
+                subfolders: updateRecursive(item.subfolders),
+              };
+            }
+            return item;
+          });
+        };
+        return updateRecursive(prev);
+      });
+
+      if (onUpdateFolder) await onUpdateFolder(folderId, data);
+    },
+    [onUpdateFolder],
+  );
+
+  // Delete folder handler
+  const handleDeleteFolder = React.useCallback(
+    async (folderId: FolderId) => {
+      setFolders((prev) => {
+        const deleteRecursive = (items: Folder[]): Folder[] => {
+          return items.filter((item) => {
+            if (item.id.id === folderId.id) return false;
+            if (item.subfolders) {
+              item.subfolders = deleteRecursive(item.subfolders);
+            }
+            return true;
+          });
+        };
+        return deleteRecursive(prev);
+      });
+
+      if (onDeleteFolder) await onDeleteFolder(folderId);
+    },
+    [onDeleteFolder],
+  );
+
+  // Update note handler
+  const handleUpdateNote = React.useCallback(
+    async (noteId: string, data: Partial<Note>) => {
+      // Update in folders
+      setFolders((prev) => {
+        const updateRecursive = (items: Folder[]): Folder[] => {
+          return items.map((item) => {
+            if (item.notes) {
+              item.notes = item.notes.map((note) => (note.id.id === noteId ? { ...note, ...data } : note));
+            }
+            if (item.subfolders) {
+              item.subfolders = updateRecursive(item.subfolders);
+            }
+            return item;
+          });
+        };
+        return updateRecursive(prev);
+      });
+
+      // Update in global notes
+      setGlobalNotes((prev) => prev.map((note) => (note.id.id === noteId ? { ...note, ...data } : note)));
+
+      // Handle favorites
+      if (data.favorite !== undefined) {
+        if (data.favorite) {
+          // Find note and add to favorites
+          const findNote = (): Note | undefined => {
+            const checkGlobal = globalNotes.find((n) => n.id.id === noteId);
+            if (checkGlobal) return checkGlobal;
+
+            const checkFolders = (items: Folder[]): Note | undefined => {
+              for (const folder of items) {
+                const found = folder.notes?.find((n) => n.id.id === noteId);
+                if (found) return found;
+                if (folder.subfolders) {
+                  const subFound = checkFolders(folder.subfolders);
+                  if (subFound) return subFound;
+                }
               }
-            }
-            if (item.children) {
-              return {
-                ...item,
-                children: addChildRecursive(item.children)
-              }
-            }
-            return item
-          })
-        }
+            };
+            return checkFolders(folders);
+          };
 
-        return {
-          favorites: addChildRecursive(prev.favorites),
-          inklings: addChildRecursive(prev.inklings)
-        }
-      })
-    } else {
-      // Add as root inkling
-      setPages(prev => ({
-        ...prev,
-        inklings: [...prev.inklings, newPage]
-      }))
-    }
-
-    if (onCreatePage) {
-      return await onCreatePage(parent)
-    }
-    return newPage
-  }, [onCreatePage])
-
-  const handleUpdatePage = React.useCallback(async (pageId: string, data: Partial<Page>) => {
-    setPages(prev => {
-      const updateRecursive = (items: Page[]): Page[] => {
-        return items.map(item => {
-          if (item.id.id === pageId) {
-            const updated = { ...item, ...data }
-            
-            // Handle favorite toggle
-            if (data.favorite !== undefined) {
-              if (data.favorite && !prev.favorites.find(f => f.id.id === pageId)) {
-                // Moving to favorites - remove from inklings
-                return null as any // Will be filtered
-              }
-            }
-            
-            return updated
+          const note = findNote();
+          if (note && !favoriteNotes.find((f) => f.id.id === noteId)) {
+            setFavoriteNotes((prev) => [...prev, { ...note, favorite: true }]);
           }
-          if (item.children) {
-            return {
-              ...item,
-              children: updateRecursive(item.children)
-            }
-          }
-          return item
-        }).filter(Boolean)
-      }
-
-      const updatedInklings = updateRecursive(prev.inklings)
-      const updatedFavorites = updateRecursive(prev.favorites)
-
-      // If toggling favorite on, move to favorites
-      if (data.favorite) {
-        const findPage = (items: Page[]): Page | undefined => {
-          for (const item of items) {
-            if (item.id.id === pageId) return item
-            if (item.children) {
-              const found = findPage(item.children)
-              if (found) return found
-            }
-          }
-        }
-        
-        const page = findPage(updatedInklings) || findPage(prev.inklings)
-        if (page && !updatedFavorites.find(f => f.id.id === pageId)) {
-          return {
-            favorites: [...updatedFavorites, { ...page, favorite: true }],
-            inklings: updatedInklings
-          }
+        } else {
+          setFavoriteNotes((prev) => prev.filter((n) => n.id.id !== noteId));
         }
       }
 
-      // If toggling favorite off, move to inklings
-      if (data.favorite === false) {
-        const page = updatedFavorites.find(f => f.id.id === pageId)
-        if (page) {
-          return {
-            favorites: updatedFavorites.filter(f => f.id.id !== pageId),
-            inklings: [...updatedInklings, { ...page, favorite: false }]
-          }
-        }
-      }
+      if (onUpdateNote) await onUpdateNote(noteId, data);
+    },
+    [onUpdateNote, globalNotes, folders, favoriteNotes],
+  );
 
-      return {
-        favorites: updatedFavorites,
-        inklings: updatedInklings
-      }
-    })
+  // Delete note handler
+  const handleDeleteNote = React.useCallback(
+    async (noteId: NoteId) => {
+      // Delete from folders
+      setFolders((prev) => {
+        const deleteRecursive = (items: Folder[]): Folder[] => {
+          return items.map((item) => {
+            if (item.notes) {
+              item.notes = item.notes.filter((note) => note.id.id !== noteId.id);
+            }
+            if (item.subfolders) {
+              item.subfolders = deleteRecursive(item.subfolders);
+            }
+            return item;
+          });
+        };
+        return deleteRecursive(prev);
+      });
 
-    if (onUpdatePage) {
-      await onUpdatePage(pageId, data)
-    }
-  }, [onUpdatePage])
+      // Delete from global notes
+      setGlobalNotes((prev) => prev.filter((note) => note.id.id !== noteId.id));
 
-  const handleDeletePage = React.useCallback(async (pageId: PageId) => {
-    setPages(prev => {
-      const deleteRecursive = (items: Page[]): Page[] => {
-        return items.filter(item => {
-          if (item.id.id === pageId.id) return false
-          if (item.children) {
-            item.children = deleteRecursive(item.children)
-          }
-          return true
-        })
-      }
+      // Delete from favorites
+      setFavoriteNotes((prev) => prev.filter((note) => note.id.id !== noteId.id));
 
-      return {
-        favorites: deleteRecursive(prev.favorites),
-        inklings: deleteRecursive(prev.inklings)
-      }
-    })
-
-    if (onDeletePage) {
-      await onDeletePage(pageId)
-    }
-  }, [onDeletePage])
+      if (onDeleteNote) await onDeleteNote(noteId);
+    },
+    [onDeleteNote],
+  );
 
   return (
     <Sidebar className="border-r border-sidebar-border" {...props}>
@@ -530,11 +709,10 @@ export function AppSidebar({
           <span className="font-serif font-semibold text-lg text-sidebar-foreground">Inklings</span>
         </div>
 
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search notes..." 
+          <Input
+            placeholder="Search notes..."
             className="pl-9 bg-sidebar-accent border-0 focus-visible:ring-1 focus-visible:ring-sidebar-ring"
           />
         </div>
@@ -542,23 +720,22 @@ export function AppSidebar({
 
       <SidebarContent className="gap-0 px-2">
         {/* Favorites section */}
-        {pages.favorites.length > 0 && (
+        {favoriteNotes.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-2">
               Favorites
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {pages.favorites.map((page) => (
-                  <Inkling
-                    key={page.id.id}
-                    page={page}
+                {favoriteNotes.map((note) => (
+                  <NoteItem
+                    key={note.id.id}
+                    note={note}
                     depth={0}
-                    onNavigate={onNavigate}
-                    onCreateChild={handleCreatePage}
-                    onUpdate={handleUpdatePage}
-                    onDelete={handleDeletePage}
-                    isActive={currentPageId === page.id.id}
+                    onNavigate={onNavigateToNote}
+                    onUpdate={handleUpdateNote}
+                    onDelete={handleDeleteNote}
+                    isActive={currentNoteId === note.id.id}
                   />
                 ))}
               </SidebarMenu>
@@ -566,33 +743,60 @@ export function AppSidebar({
           </SidebarGroup>
         )}
 
-        {/* Inklings section */}
+        {/* Global Notes section */}
+        {globalNotes.length > 0 && (
+          <SidebarGroup>
+            <div className="flex items-center justify-between px-2 mb-1">
+              <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider p-0">
+                Quick Notes
+              </SidebarGroupLabel>
+              <Button variant="ghost" size="icon" className="h-5 w-5 p-0" onClick={() => handleCreateNote()}>
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {globalNotes.map((note) => (
+                  <NoteItem
+                    key={note.id.id}
+                    note={note}
+                    depth={0}
+                    onNavigate={onNavigateToNote}
+                    onUpdate={handleUpdateNote}
+                    onDelete={handleDeleteNote}
+                    isActive={currentNoteId === note.id.id}
+                  />
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Folders section */}
         <SidebarGroup>
           <div className="flex items-center justify-between px-2 mb-1">
             <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider p-0">
-              Inklings
+              Folders
             </SidebarGroupLabel>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5 p-0"
-              onClick={() => handleCreatePage()}
-            >
-              <Plus className="h-3 w-3" />
+            <Button variant="ghost" size="icon" className="h-5 w-5 p-0" onClick={() => handleCreateFolder()}>
+              <FolderPlus className="h-3 w-3" />
             </Button>
           </div>
           <SidebarGroupContent>
             <SidebarMenu>
-              {pages.inklings.map((page) => (
-                <Inkling
-                  key={page.id.id}
-                  page={page}
+              {folders.map((folder) => (
+                <FolderItem
+                  key={folder.id.id}
+                  folder={folder}
                   depth={0}
-                  onNavigate={onNavigate}
-                  onCreateChild={handleCreatePage}
-                  onUpdate={handleUpdatePage}
-                  onDelete={handleDeletePage}
-                  isActive={currentPageId === page.id.id}
+                  onNavigateToNote={onNavigateToNote}
+                  onCreateFolder={handleCreateFolder}
+                  onCreateNote={handleCreateNote}
+                  onUpdateFolder={handleUpdateFolder}
+                  onDeleteFolder={handleDeleteFolder}
+                  onUpdateNote={handleUpdateNote}
+                  onDeleteNote={handleDeleteNote}
+                  currentNoteId={currentNoteId}
                 />
               ))}
             </SidebarMenu>
@@ -613,7 +817,7 @@ export function AppSidebar({
 
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }
 
-export default AppSidebar
+export default AppSidebar;
