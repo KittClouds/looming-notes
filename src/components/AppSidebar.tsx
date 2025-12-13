@@ -62,6 +62,7 @@ interface Page {
   favorite?: boolean
   color?: string
   parent?: PageId
+  children?: Page[]
 }
 
 interface InklingProps {
@@ -73,8 +74,6 @@ interface InklingProps {
   onUpdate: (pageId: string, data: Partial<Page>) => Promise<void>
   onDelete: (pageId: PageId) => Promise<void>
   isActive: boolean
-  childPages?: Page[]
-  isLoading?: boolean
 }
 
 function Inkling({ 
@@ -86,17 +85,16 @@ function Inkling({
   onUpdate,
   onDelete,
   isActive,
-  childPages = [],
-  isLoading = false
 }: InklingProps) {
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [isHovered, setIsHovered] = React.useState(false)
-  const [showColorPicker, setShowColorPicker] = React.useState(false)
   
   const folderColor = page.color || parentColor || DEFAULT_COLORS[depth % DEFAULT_COLORS.length]
-  const hasChildren = childPages.length > 0
+  const hasChildren = (page.children?.length || 0) > 0
 
-  const handleCopyLink = () => {
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     const url = `${window.location.origin}/inkling/${page.id.id}`
     navigator.clipboard.writeText(url)
   }
@@ -111,16 +109,21 @@ function Inkling({
     }
   }
 
-  const handleToggleFavorite = async () => {
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     await onUpdate(page.id.id, { favorite: !page.favorite })
   }
 
-  const handleChangeColor = async (color: string) => {
+  const handleChangeColor = async (e: React.MouseEvent, color: string) => {
+    e.preventDefault()
+    e.stopPropagation()
     await onUpdate(page.id.id, { color })
-    setShowColorPicker(false)
   }
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     await onDelete(page.id)
   }
 
@@ -166,13 +169,9 @@ function Inkling({
                   "h-6 w-6 p-0 shrink-0",
                   !isHovered && !hasChildren && "invisible"
                 )}
-                onClick={(e) => {
-                  e.stopPropagation()
-                }}
+                disabled={!hasChildren}
               >
-                {isLoading ? (
-                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" />
-                ) : isExpanded ? (
+                {isExpanded ? (
                   <ChevronDown className="h-3 w-3" />
                 ) : (
                   <ChevronRight className="h-3 w-3" />
@@ -196,7 +195,7 @@ function Inkling({
                 {page.title || "New Inkling"}
               </span>
               {page.favorite && (
-                <Star className="h-3 w-3 shrink-0 fill-yellow-400 text-yellow-400" />
+                <Star className="h-3 w-3 shrink-0 fill-yellow-400 text-yellow-400 ml-auto" />
               )}
             </SidebarMenuButton>
 
@@ -214,7 +213,7 @@ function Inkling({
                 <Plus className="h-3 w-3" />
               </Button>
 
-              <DropdownMenu open={showColorPicker} onOpenChange={setShowColorPicker}>
+              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -224,36 +223,39 @@ function Inkling({
                     <MoreVertical className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-popover z-50">
+                <DropdownMenuContent align="end" className="w-56">
                   <div className="p-2">
                     <div className="text-sm font-medium mb-2">Change Color</div>
                     <div className="flex flex-wrap gap-2">
                       {DEFAULT_COLORS.map((color) => (
                         <button
                           key={color}
-                          onClick={() => handleChangeColor(color)}
-                          className="w-6 h-6 rounded border-2 hover:scale-110 transition-transform"
+                          onClick={(e) => handleChangeColor(e, color)}
+                          className="w-6 h-6 rounded border-2 hover:scale-110 transition-transform cursor-pointer"
                           style={{
                             backgroundColor: color,
-                            borderColor: color === folderColor ? 'hsl(var(--foreground))' : 'transparent',
+                            borderColor: color === folderColor ? '#000' : 'transparent',
                           }}
+                          aria-label={`Change color to ${color}`}
                         />
                       ))}
                     </div>
                   </div>
                   <DropdownMenuSeparator />
                   
-                  {page.favorite ? (
-                    <DropdownMenuItem onClick={handleToggleFavorite}>
-                      <StarOff className="mr-2 h-4 w-4" />
-                      Remove from favorites
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem onClick={handleToggleFavorite}>
-                      <Star className="mr-2 h-4 w-4" />
-                      Save to favorites
-                    </DropdownMenuItem>
-                  )}
+                  <DropdownMenuItem onClick={handleToggleFavorite}>
+                    {page.favorite ? (
+                      <>
+                        <StarOff className="mr-2 h-4 w-4" />
+                        Remove from favorites
+                      </>
+                    ) : (
+                      <>
+                        <Star className="mr-2 h-4 w-4" />
+                        Save to favorites
+                      </>
+                    )}
+                  </DropdownMenuItem>
                   
                   <DropdownMenuItem onClick={handleCopyLink}>
                     <LinkIcon className="mr-2 h-4 w-4" />
@@ -277,8 +279,8 @@ function Inkling({
           <CollapsibleContent>
             <SidebarMenuSub className="ml-0 pl-0 border-l-0">
               {hasChildren ? (
-                childPages.map((child) => (
-                  <InklingTree
+                page.children!.map((child) => (
+                  <Inkling
                     key={child.id.id}
                     page={child}
                     depth={depth + 1}
@@ -306,36 +308,6 @@ function Inkling({
   )
 }
 
-// Wrapper component that handles data fetching for children
-function InklingTree({ 
-  page,
-  depth = 0,
-  parentColor,
-  onNavigate,
-  onCreateChild,
-  onUpdate,
-  onDelete,
-  isActive,
-}: Omit<InklingProps, 'childPages' | 'isLoading'>) {
-  const [childPages] = React.useState<Page[]>([])
-  const [isLoading] = React.useState(false)
-
-  return (
-    <Inkling
-      page={page}
-      depth={depth}
-      parentColor={parentColor}
-      onNavigate={onNavigate}
-      onCreateChild={onCreateChild}
-      onUpdate={onUpdate}
-      onDelete={onDelete}
-      isActive={isActive}
-      childPages={childPages}
-      isLoading={isLoading}
-    />
-  )
-}
-
 // Main sidebar component
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   pages?: {
@@ -349,33 +321,204 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   onDeletePage?: (pageId: PageId) => Promise<void>
 }
 
-// Demo data for initial display
+// Demo data with nested structure
 const demoPages: { favorites: Page[], inklings: Page[] } = {
   favorites: [
-    { id: { id: 'fav-1' }, title: 'Getting Started', favorite: true, color: '#3b82f6' },
+    { 
+      id: { id: 'fav-1' }, 
+      title: 'Getting Started', 
+      favorite: true, 
+      color: '#3b82f6',
+      children: []
+    },
   ],
   inklings: [
-    { id: { id: 'ink-1' }, title: 'Work', color: '#10b981' },
-    { id: { id: 'ink-2' }, title: 'Personal', color: '#8b5cf6' },
-    { id: { id: 'ink-3' }, title: 'Ideas', color: '#f59e0b' },
+    { 
+      id: { id: 'ink-1' }, 
+      title: 'Work', 
+      color: '#10b981',
+      children: []
+    },
+    { 
+      id: { id: 'ink-2' }, 
+      title: 'Personal', 
+      color: '#8b5cf6',
+      children: [
+        {
+          id: { id: 'ink-2-1' },
+          title: 'Journal',
+          color: '#8b5cf6',
+          children: []
+        }
+      ]
+    },
+    { 
+      id: { id: 'ink-3' }, 
+      title: 'Ideas', 
+      color: '#f59e0b',
+      children: []
+    },
   ]
 }
 
 export function AppSidebar({ 
-  pages = demoPages,
+  pages: initialPages,
   currentPageId,
-  onNavigate = () => {},
-  onCreatePage = async () => null,
-  onUpdatePage = async () => {},
-  onDeletePage = async () => {},
+  onNavigate = (id) => console.log('Navigate to:', id),
+  onCreatePage,
+  onUpdatePage,
+  onDeletePage,
   ...props 
 }: AppSidebarProps) {
-  const handleCreateRootPage = async () => {
-    const newPage = await onCreatePage()
-    if (newPage) {
-      onNavigate(newPage.id.id)
+  // State to manage pages internally for demo purposes
+  const [pages, setPages] = React.useState(initialPages || demoPages)
+
+  // Default handlers with state management
+  const handleCreatePage = React.useCallback(async (parent?: PageId) => {
+    const newId = `page-${Date.now()}`
+    const newPage: Page = {
+      id: { id: newId },
+      title: '',
+      color: DEFAULT_COLORS[Math.floor(Math.random() * DEFAULT_COLORS.length)],
+      parent: parent,
+      children: []
     }
-  }
+
+    if (parent) {
+      // Add as child
+      setPages(prev => {
+        const addChildRecursive = (items: Page[]): Page[] => {
+          return items.map(item => {
+            if (item.id.id === parent.id) {
+              return {
+                ...item,
+                children: [...(item.children || []), newPage]
+              }
+            }
+            if (item.children) {
+              return {
+                ...item,
+                children: addChildRecursive(item.children)
+              }
+            }
+            return item
+          })
+        }
+
+        return {
+          favorites: addChildRecursive(prev.favorites),
+          inklings: addChildRecursive(prev.inklings)
+        }
+      })
+    } else {
+      // Add as root inkling
+      setPages(prev => ({
+        ...prev,
+        inklings: [...prev.inklings, newPage]
+      }))
+    }
+
+    if (onCreatePage) {
+      return await onCreatePage(parent)
+    }
+    return newPage
+  }, [onCreatePage])
+
+  const handleUpdatePage = React.useCallback(async (pageId: string, data: Partial<Page>) => {
+    setPages(prev => {
+      const updateRecursive = (items: Page[]): Page[] => {
+        return items.map(item => {
+          if (item.id.id === pageId) {
+            const updated = { ...item, ...data }
+            
+            // Handle favorite toggle
+            if (data.favorite !== undefined) {
+              if (data.favorite && !prev.favorites.find(f => f.id.id === pageId)) {
+                // Moving to favorites - remove from inklings
+                return null as any // Will be filtered
+              }
+            }
+            
+            return updated
+          }
+          if (item.children) {
+            return {
+              ...item,
+              children: updateRecursive(item.children)
+            }
+          }
+          return item
+        }).filter(Boolean)
+      }
+
+      const updatedInklings = updateRecursive(prev.inklings)
+      const updatedFavorites = updateRecursive(prev.favorites)
+
+      // If toggling favorite on, move to favorites
+      if (data.favorite) {
+        const findPage = (items: Page[]): Page | undefined => {
+          for (const item of items) {
+            if (item.id.id === pageId) return item
+            if (item.children) {
+              const found = findPage(item.children)
+              if (found) return found
+            }
+          }
+        }
+        
+        const page = findPage(updatedInklings) || findPage(prev.inklings)
+        if (page && !updatedFavorites.find(f => f.id.id === pageId)) {
+          return {
+            favorites: [...updatedFavorites, { ...page, favorite: true }],
+            inklings: updatedInklings
+          }
+        }
+      }
+
+      // If toggling favorite off, move to inklings
+      if (data.favorite === false) {
+        const page = updatedFavorites.find(f => f.id.id === pageId)
+        if (page) {
+          return {
+            favorites: updatedFavorites.filter(f => f.id.id !== pageId),
+            inklings: [...updatedInklings, { ...page, favorite: false }]
+          }
+        }
+      }
+
+      return {
+        favorites: updatedFavorites,
+        inklings: updatedInklings
+      }
+    })
+
+    if (onUpdatePage) {
+      await onUpdatePage(pageId, data)
+    }
+  }, [onUpdatePage])
+
+  const handleDeletePage = React.useCallback(async (pageId: PageId) => {
+    setPages(prev => {
+      const deleteRecursive = (items: Page[]): Page[] => {
+        return items.filter(item => {
+          if (item.id.id === pageId.id) return false
+          if (item.children) {
+            item.children = deleteRecursive(item.children)
+          }
+          return true
+        })
+      }
+
+      return {
+        favorites: deleteRecursive(prev.favorites),
+        inklings: deleteRecursive(prev.inklings)
+      }
+    })
+
+    if (onDeletePage) {
+      await onDeletePage(pageId)
+    }
+  }, [onDeletePage])
 
   return (
     <Sidebar className="border-r border-sidebar-border" {...props}>
@@ -407,14 +550,14 @@ export function AppSidebar({
             <SidebarGroupContent>
               <SidebarMenu>
                 {pages.favorites.map((page) => (
-                  <InklingTree
+                  <Inkling
                     key={page.id.id}
                     page={page}
                     depth={0}
                     onNavigate={onNavigate}
-                    onCreateChild={onCreatePage}
-                    onUpdate={onUpdatePage}
-                    onDelete={onDeletePage}
+                    onCreateChild={handleCreatePage}
+                    onUpdate={handleUpdatePage}
+                    onDelete={handleDeletePage}
                     isActive={currentPageId === page.id.id}
                   />
                 ))}
@@ -433,7 +576,7 @@ export function AppSidebar({
               variant="ghost"
               size="icon"
               className="h-5 w-5 p-0"
-              onClick={handleCreateRootPage}
+              onClick={() => handleCreatePage()}
             >
               <Plus className="h-3 w-3" />
             </Button>
@@ -441,14 +584,14 @@ export function AppSidebar({
           <SidebarGroupContent>
             <SidebarMenu>
               {pages.inklings.map((page) => (
-                <InklingTree
+                <Inkling
                   key={page.id.id}
                   page={page}
                   depth={0}
                   onNavigate={onNavigate}
-                  onCreateChild={onCreatePage}
-                  onUpdate={onUpdatePage}
-                  onDelete={onDeletePage}
+                  onCreateChild={handleCreatePage}
+                  onUpdate={handleUpdatePage}
+                  onDelete={handleDeletePage}
                   isActive={currentPageId === page.id.id}
                 />
               ))}
