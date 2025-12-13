@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { RichTextProvider } from 'reactjs-tiptap-editor';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { EditorContent, useEditor, JSONContent } from '@tiptap/react';
+import { Note } from '@/store/notes';
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 
 // Base Kit
 import { Document } from '@tiptap/extension-document';
@@ -299,22 +301,65 @@ const RichTextToolbar = () => {
   );
 };
 
-export function NoteEditor() {
-  const [content, setContent] = useState('');
+interface NoteEditorProps {
+  note: Note | null
+  onUpdateNote: (noteId: string, data: Partial<Note>) => Promise<void>
+}
 
-  const onValueChange = useCallback((value: string) => {
-    setContent(value);
-  }, []);
+export function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
+  const [title, setTitle] = useState('')
+  const [isSyncing, setIsSyncing] = useState(false)
+
+  // Debounced save for content
+  const debouncedSaveContent = useDebouncedCallback((content: JSONContent) => {
+    if (note) {
+      setIsSyncing(true)
+      onUpdateNote(note.id.id, { content }).finally(() => {
+        setIsSyncing(false)
+      })
+    }
+  }, 500)
+
+  // Debounced save for title
+  const debouncedSaveTitle = useDebouncedCallback((newTitle: string) => {
+    if (note) {
+      onUpdateNote(note.id.id, { title: newTitle })
+    }
+  }, 500)
 
   const editor = useEditor({
-    content,
     extensions,
     immediatelyRender: false,
+    content: note?.content || { type: 'doc', content: [] },
     onUpdate: ({ editor }) => {
-      const html = editor.getHTML();
-      onValueChange(html);
+      const json = editor.getJSON()
+      debouncedSaveContent(json)
     },
-  });
+  })
+
+  // Update editor content when note changes
+  useEffect(() => {
+    if (note && editor && !editor.isDestroyed) {
+      const currentContent = editor.getJSON()
+      const newContent = note.content || { type: 'doc', content: [] }
+      
+      // Only update if content is actually different
+      if (JSON.stringify(currentContent) !== JSON.stringify(newContent)) {
+        editor.commands.setContent(newContent)
+      }
+      
+      setTitle(note.title || '')
+    } else if (!note && editor) {
+      editor.commands.setContent({ type: 'doc', content: [] })
+      setTitle('')
+    }
+  }, [note?.id.id, editor])
+
+  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value
+    setTitle(newTitle)
+    debouncedSaveTitle(newTitle)
+  }, [debouncedSaveTitle])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -322,10 +367,36 @@ export function NoteEditor() {
     }
   }, [editor]);
 
+  if (!note) {
+    return (
+      <div className="flex items-center justify-center h-full text-muted-foreground">
+        <div className="text-center">
+          <p className="text-lg">No note selected</p>
+          <p className="text-sm">Create or select a note to start writing</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col h-full w-full">
+      <div className="p-6 border-b border-border">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={title}
+            onChange={handleTitleChange}
+            placeholder="Untitled Note"
+            className="text-3xl font-bold w-full bg-transparent border-none outline-none placeholder:text-muted-foreground"
+          />
+          {isSyncing && (
+            <span className="text-xs text-muted-foreground">Saving...</span>
+          )}
+        </div>
+      </div>
+      
       <RichTextProvider editor={editor}>
-        <div className="flex flex-col h-full overflow-hidden border border-border rounded-lg">
+        <div className="flex flex-col flex-1 overflow-hidden border-x border-b border-border rounded-b-lg">
           <RichTextToolbar />
           <div className="flex-1 overflow-auto bg-background">
             <EditorContent editor={editor} className="min-h-[500px] p-4" />
