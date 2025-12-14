@@ -391,7 +391,8 @@ export function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="p-6 border-b border-border">
+      {/* Fixed Header */}
+      <div className="shrink-0 p-6 border-b border-border bg-background z-10">
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -401,38 +402,48 @@ export function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
             className="text-3xl font-bold w-full bg-transparent border-none outline-none placeholder:text-muted-foreground"
           />
           {isSyncing && (
-            <span className="text-xs text-muted-foreground">Saving...</span>
+            <span className="text-xs text-muted-foreground shrink-0">Saving...</span>
           )}
         </div>
       </div>
       
-      <RichTextProvider editor={editor}>
-        <div className="flex flex-col flex-1 overflow-hidden border-x border-b border-border rounded-b-lg">
-          <RichTextToolbar />
-          <div className="flex-1 overflow-auto bg-background">
-            <EditorContent editor={editor} className="min-h-[500px] p-4" />
+      {/* Editor Container - Fixed positioning */}
+      <div className="flex-1 min-h-0 relative">
+        <RichTextProvider editor={editor}>
+          <div className="absolute inset-0 flex flex-col overflow-hidden">
+            {/* Toolbar - Fixed */}
+            <div className="shrink-0">
+              <RichTextToolbar />
+            </div>
+            
+            {/* Editor Content - Scrollable */}
+            <div className="flex-1 overflow-auto bg-background">
+              <EditorContent editor={editor} className="h-full" />
+            </div>
+
+            {/* Bubble Menus */}
+            <RichTextBubbleMenuDragHandle />
+            <RichTextBubbleText />
+            <RichTextBubbleLink />
+            <RichTextBubbleImage />
+            <RichTextBubbleVideo />
+            <RichTextBubbleImageGif />
+            <RichTextBubbleTable />
+            <RichTextBubbleColumns />
+            <RichTextBubbleDrawer />
+            <RichTextBubbleExcalidraw />
+            <RichTextBubbleIframe />
+            <RichTextBubbleKatex />
+            <RichTextBubbleMermaid />
+            <RichTextBubbleTwitter />
+
+            {/* Slash Command - Wrapped to prevent ref warning */}
+            <div className="slash-command-portal">
+              <SlashCommandList />
+            </div>
           </div>
-
-          {/* Bubble Menus */}
-          <RichTextBubbleMenuDragHandle />
-          <RichTextBubbleText />
-          <RichTextBubbleLink />
-          <RichTextBubbleImage />
-          <RichTextBubbleVideo />
-          <RichTextBubbleImageGif />
-          <RichTextBubbleTable />
-          <RichTextBubbleColumns />
-          <RichTextBubbleDrawer />
-          <RichTextBubbleExcalidraw />
-          <RichTextBubbleIframe />
-          <RichTextBubbleKatex />
-          <RichTextBubbleMermaid />
-          <RichTextBubbleTwitter />
-
-          {/* Slash Command */}
-          <SlashCommandList />
-        </div>
-      </RichTextProvider>
+        </RichTextProvider>
+      </div>
     </div>
   );
 }
