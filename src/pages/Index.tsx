@@ -36,9 +36,9 @@ const Index = () => {
           onUpdateNote={updateNote}
           onDeleteNote={deleteNote}
         />
-        <SidebarInset className="flex flex-col flex-1">
+        <SidebarInset className="flex flex-col flex-1 overflow-hidden">
           <AppHeader />
-          <main className="flex-1 overflow-hidden">
+          <main className="flex-1 overflow-auto relative">
             <NoteEditor note={currentNote} onUpdateNote={updateNote} />
           </main>
         </SidebarInset>
