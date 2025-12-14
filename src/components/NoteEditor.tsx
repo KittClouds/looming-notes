@@ -407,9 +407,9 @@ export function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
       </div>
       
       <RichTextProvider editor={editor}>
-        <div className="flex flex-col flex-1 overflow-hidden border-x border-b border-border rounded-b-lg relative">
+        <div className="flex flex-col flex-1 overflow-hidden border-x border-b border-border rounded-b-lg">
           <RichTextToolbar />
-          <div className="flex-1 overflow-auto bg-background relative">
+          <div className="flex-1 overflow-auto bg-background">
             <EditorContent editor={editor} className="min-h-[500px] p-4" />
           </div>
 
