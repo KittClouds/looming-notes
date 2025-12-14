@@ -390,7 +390,7 @@ export function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
   }
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-full w-full relative">
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-2">
           <input
@@ -407,31 +407,31 @@ export function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
       </div>
       
       <RichTextProvider editor={editor}>
-        <div className="flex flex-col flex-1 overflow-hidden border-x border-b border-border rounded-b-lg">
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden border-x border-b border-border rounded-b-lg">
           <RichTextToolbar />
           <div className="flex-1 overflow-auto bg-background">
             <EditorContent editor={editor} className="min-h-[500px] p-4" />
           </div>
-
-          {/* Bubble Menus */}
-          <RichTextBubbleMenuDragHandle />
-          <RichTextBubbleText />
-          <RichTextBubbleLink />
-          <RichTextBubbleImage />
-          <RichTextBubbleVideo />
-          <RichTextBubbleImageGif />
-          <RichTextBubbleTable />
-          <RichTextBubbleColumns />
-          <RichTextBubbleDrawer />
-          <RichTextBubbleExcalidraw />
-          <RichTextBubbleIframe />
-          <RichTextBubbleKatex />
-          <RichTextBubbleMermaid />
-          <RichTextBubbleTwitter />
-
-          {/* Slash Command */}
-          <SlashCommandList />
         </div>
+
+        {/* Bubble Menus - rendered outside overflow container */}
+        <RichTextBubbleMenuDragHandle />
+        <RichTextBubbleText />
+        <RichTextBubbleLink />
+        <RichTextBubbleImage />
+        <RichTextBubbleVideo />
+        <RichTextBubbleImageGif />
+        <RichTextBubbleTable />
+        <RichTextBubbleColumns />
+        <RichTextBubbleDrawer />
+        <RichTextBubbleExcalidraw />
+        <RichTextBubbleIframe />
+        <RichTextBubbleKatex />
+        <RichTextBubbleMermaid />
+        <RichTextBubbleTwitter />
+
+        {/* Slash Command - rendered outside overflow container */}
+        <SlashCommandList />
       </RichTextProvider>
     </div>
   );
