@@ -1,6 +1,7 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import { JSONContent } from '@tiptap/react'
+import { DocumentConnections } from '@/lib/entities/entityTypes'
 
 // Types
 export interface FolderId {
@@ -24,6 +25,7 @@ export interface Note {
   id: NoteId
   title: string
   content: JSONContent
+  connections?: DocumentConnections
   favorite?: boolean
   folder?: FolderId
   createdAt: number
