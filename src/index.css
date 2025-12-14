@@ -231,21 +231,6 @@
   outline: none;
 }
 
-/* Tiptap menus z-index fix - ensure menus appear above header */
-[data-tippy-root],
-[data-radix-popper-content-wrapper],
-.tippy-box,
-.tiptap-menu,
-.richtext-slash-command,
-.richtext-bubble-menu {
-  z-index: 100 !important;
-}
-
-/* Prevent editor from scrolling when menus open */
-.richtext-slash-command-list {
-  position: fixed !important;
-}
-
 /* Import editor styles */
 @import "reactjs-tiptap-editor/style.css";
 @import "katex/dist/katex.min.css";
