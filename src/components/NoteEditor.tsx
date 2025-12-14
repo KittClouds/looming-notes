@@ -21,7 +21,7 @@ import 'katex/dist/katex.min.css';
 import 'easydrawer/styles.css';
 import '@excalidraw/excalidraw/index.css';
 
-// Custom Extensions for entity highlighting
+// Custom Extensions for entity highlighting (without decoration plugins)
 import { EntityMark } from '@/lib/extensions/EntityMark';
 import { TagMark } from '@/lib/extensions/TagMark';
 import { MentionMark } from '@/lib/extensions/MentionMark';
