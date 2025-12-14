@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, forwardRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { RichTextProvider } from 'reactjs-tiptap-editor';
 import { EditorContent, useEditor, JSONContent } from '@tiptap/react';
 import { Note } from '@/store/notes';
