@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, forwardRef, ComponentPropsWithoutRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { RichTextProvider } from 'reactjs-tiptap-editor';
 import { EditorContent, useEditor, JSONContent } from '@tiptap/react';
 import { Note } from '@/store/notes';
@@ -310,15 +310,6 @@ const RichTextToolbar = () => {
   );
 };
 
-// Wrapper to suppress ref warning from SlashCommandList
-const SlashCommandWrapper = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<'div'>>((props, ref) => {
-  return (
-    <div ref={ref} {...props}>
-      <SlashCommandList />
-    </div>
-  )
-})
-SlashCommandWrapper.displayName = 'SlashCommandWrapper'
 
 interface NoteEditorProps {
   note: Note | null
@@ -452,8 +443,8 @@ export function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
           <RichTextBubbleMermaid />
           <RichTextBubbleTwitter />
 
-          {/* Slash Command - Using wrapper to prevent ref warning */}
-          <SlashCommandWrapper />
+          {/* Slash Command */}
+          <SlashCommandList />
         </RichTextProvider>
       </div>
     </div>
