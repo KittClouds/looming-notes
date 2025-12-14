@@ -4,6 +4,7 @@ import { EditorContent, useEditor, JSONContent } from '@tiptap/react';
 import { Note } from '@/store/notes';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { parseNoteConnectionsFromDocument } from '@/lib/entities/documentParser';
+import { calculateAvailableHeight } from '@/lib/layout-utils';
 
 // Base Kit
 import { Document } from '@tiptap/extension-document';
@@ -318,6 +319,9 @@ interface NoteEditorProps {
 export function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
   const [title, setTitle] = useState('')
   const [isSyncing, setIsSyncing] = useState(false)
+  
+  // Calculate dynamic height based on viewport
+  const maxHeight = calculateAvailableHeight(true)
 
   // Debounced save for content with entity extraction
   const debouncedSaveContent = useDebouncedCallback((content: JSONContent) => {
@@ -407,10 +411,13 @@ export function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
       </div>
       
       <RichTextProvider editor={editor}>
-        <div className="flex flex-col flex-1 overflow-hidden border-x border-b border-border rounded-b-lg">
+        <div 
+          className="flex flex-col overflow-hidden border-x border-b border-border rounded-b-lg"
+          style={{ maxHeight }}
+        >
           <RichTextToolbar />
           <div className="flex-1 overflow-auto bg-background">
-            <EditorContent editor={editor} className="min-h-[500px] p-4" />
+            <EditorContent editor={editor} className="p-4" />
           </div>
 
           {/* Bubble Menus */}
