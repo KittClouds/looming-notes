@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, forwardRef, ComponentPropsWithoutRef } from 'react';
 import { RichTextProvider } from 'reactjs-tiptap-editor';
 import { EditorContent, useEditor, JSONContent } from '@tiptap/react';
 import { Note } from '@/store/notes';
@@ -310,6 +310,16 @@ const RichTextToolbar = () => {
   );
 };
 
+// Wrapper to suppress ref warning from SlashCommandList
+const SlashCommandWrapper = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<'div'>>((props, ref) => {
+  return (
+    <div ref={ref} {...props}>
+      <SlashCommandList />
+    </div>
+  )
+})
+SlashCommandWrapper.displayName = 'SlashCommandWrapper'
+
 interface NoteEditorProps {
   note: Note | null
   onUpdateNote: (noteId: string, data: Partial<Note>) => Promise<void>
@@ -390,58 +400,60 @@ export function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
   }
 
   return (
-    <div className="flex flex-col h-full w-full">
-      {/* Fixed Header */}
-      <div className="shrink-0 p-6 border-b border-border bg-background z-10">
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={title}
-            onChange={handleTitleChange}
-            placeholder="Untitled Note"
-            className="text-3xl font-bold w-full bg-transparent border-none outline-none placeholder:text-muted-foreground"
-          />
-          {isSyncing && (
-            <span className="text-xs text-muted-foreground shrink-0">Saving...</span>
-          )}
+    <div className="h-full w-full flex flex-col overflow-hidden">
+      {/* Title Header */}
+      <div className="shrink-0 border-b border-border bg-background">
+        <div className="p-6">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={title}
+              onChange={handleTitleChange}
+              placeholder="Untitled Note"
+              className="text-3xl font-bold w-full bg-transparent border-none outline-none placeholder:text-muted-foreground"
+            />
+            {isSyncing && (
+              <span className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
+                Saving...
+              </span>
+            )}
+          </div>
         </div>
       </div>
       
-      {/* Editor Container - Fixed positioning */}
-      <div className="flex-1 min-h-0 relative">
+      {/* Editor Area */}
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         <RichTextProvider editor={editor}>
-          <div className="absolute inset-0 flex flex-col overflow-hidden">
-            {/* Toolbar - Fixed */}
-            <div className="shrink-0">
-              <RichTextToolbar />
-            </div>
-            
-            {/* Editor Content - Scrollable */}
-            <div className="flex-1 overflow-auto bg-background">
-              <EditorContent editor={editor} className="h-full" />
-            </div>
-
-            {/* Bubble Menus */}
-            <RichTextBubbleMenuDragHandle />
-            <RichTextBubbleText />
-            <RichTextBubbleLink />
-            <RichTextBubbleImage />
-            <RichTextBubbleVideo />
-            <RichTextBubbleImageGif />
-            <RichTextBubbleTable />
-            <RichTextBubbleColumns />
-            <RichTextBubbleDrawer />
-            <RichTextBubbleExcalidraw />
-            <RichTextBubbleIframe />
-            <RichTextBubbleKatex />
-            <RichTextBubbleMermaid />
-            <RichTextBubbleTwitter />
-
-            {/* Slash Command - Wrapped to prevent ref warning */}
-            <div className="slash-command-portal">
-              <SlashCommandList />
+          {/* Toolbar */}
+          <div className="shrink-0">
+            <RichTextToolbar />
+          </div>
+          
+          {/* Editor Content - Scrollable */}
+          <div className="flex-1 overflow-auto bg-background">
+            <div className="max-w-4xl mx-auto">
+              <EditorContent editor={editor} className="p-6" />
             </div>
           </div>
+
+          {/* Bubble Menus */}
+          <RichTextBubbleMenuDragHandle />
+          <RichTextBubbleText />
+          <RichTextBubbleLink />
+          <RichTextBubbleImage />
+          <RichTextBubbleVideo />
+          <RichTextBubbleImageGif />
+          <RichTextBubbleTable />
+          <RichTextBubbleColumns />
+          <RichTextBubbleDrawer />
+          <RichTextBubbleExcalidraw />
+          <RichTextBubbleIframe />
+          <RichTextBubbleKatex />
+          <RichTextBubbleMermaid />
+          <RichTextBubbleTwitter />
+
+          {/* Slash Command - Using wrapper to prevent ref warning */}
+          <SlashCommandWrapper />
         </RichTextProvider>
       </div>
     </div>
