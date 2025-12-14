@@ -3,6 +3,7 @@ import { RichTextProvider } from 'reactjs-tiptap-editor';
 import { EditorContent, useEditor, JSONContent } from '@tiptap/react';
 import { Note } from '@/store/notes';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
+import { parseNoteConnectionsFromDocument } from '@/lib/entities/documentParser';
 
 // Base Kit
 import { Document } from '@tiptap/extension-document';
@@ -19,6 +20,11 @@ import 'prism-code-editor-lightweight/themes/github-dark.css';
 import 'katex/dist/katex.min.css';
 import 'easydrawer/styles.css';
 import '@excalidraw/excalidraw/index.css';
+
+// Custom Extensions for entity highlighting
+import { EntityMark } from '@/lib/extensions/EntityMark';
+import { TagMark } from '@/lib/extensions/TagMark';
+import { MentionMark } from '@/lib/extensions/MentionMark';
 
 // Extensions
 import { Attachment, RichTextAttachment } from 'reactjs-tiptap-editor/attachment';
@@ -119,6 +125,9 @@ const BaseKit = [
 const extensions = [
   ...BaseKit,
   History,
+  EntityMark,
+  TagMark,
+  MentionMark,
   SearchAndReplace,
   Clear,
   FontFamily,
@@ -310,11 +319,13 @@ export function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
   const [title, setTitle] = useState('')
   const [isSyncing, setIsSyncing] = useState(false)
 
-  // Debounced save for content
+  // Debounced save for content with entity extraction
   const debouncedSaveContent = useDebouncedCallback((content: JSONContent) => {
     if (note) {
       setIsSyncing(true)
-      onUpdateNote(note.id.id, { content }).finally(() => {
+      const connections = parseNoteConnectionsFromDocument(content)
+      console.log('Extracted entities:', connections)
+      onUpdateNote(note.id.id, { content, connections }).finally(() => {
         setIsSyncing(false)
       })
     }
