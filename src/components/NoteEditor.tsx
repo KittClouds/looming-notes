@@ -420,24 +420,31 @@ export function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
             <EditorContent editor={editor} className="p-4" />
           </div>
 
-          {/* Bubble Menus */}
-          <RichTextBubbleMenuDragHandle />
-          <RichTextBubbleText />
-          <RichTextBubbleLink />
-          <RichTextBubbleImage />
-          <RichTextBubbleVideo />
-          <RichTextBubbleImageGif />
-          <RichTextBubbleTable />
-          <RichTextBubbleColumns />
-          <RichTextBubbleDrawer />
-          <RichTextBubbleExcalidraw />
-          <RichTextBubbleIframe />
-          <RichTextBubbleKatex />
-          <RichTextBubbleMermaid />
-          <RichTextBubbleTwitter />
+          {/* Bubble Menus - only render when editor is ready */}
+          {editor && !editor.isDestroyed && (
+            <div className="contents">
+              {/* Essential bubble menus */}
+              <RichTextBubbleMenuDragHandle />
+              <RichTextBubbleText />
+              <RichTextBubbleLink />
+              
+              {/* Media bubble menus */}
+              <RichTextBubbleImage />
+              <RichTextBubbleVideo />
+              <RichTextBubbleImageGif />
+              <RichTextBubbleTable />
+              <RichTextBubbleColumns />
+              <RichTextBubbleDrawer />
+              <RichTextBubbleExcalidraw />
+              <RichTextBubbleIframe />
+              <RichTextBubbleKatex />
+              <RichTextBubbleMermaid />
+              <RichTextBubbleTwitter />
 
-          {/* Slash Command */}
-          <SlashCommandList />
+              {/* Slash Command */}
+              <SlashCommandList />
+            </div>
+          )}
         </div>
       </RichTextProvider>
     </div>
