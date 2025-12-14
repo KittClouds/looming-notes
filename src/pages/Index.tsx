@@ -22,7 +22,7 @@ const Index = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen h-screen flex w-full bg-background overflow-hidden">
         <AppSidebar 
           folders={folders}
           globalNotes={globalNotes}
@@ -36,9 +36,9 @@ const Index = () => {
           onUpdateNote={updateNote}
           onDeleteNote={deleteNote}
         />
-        <SidebarInset className="flex flex-col flex-1">
+        <SidebarInset className="flex flex-col flex-1 min-w-0">
           <AppHeader />
-          <main className="flex-1 overflow-hidden">
+          <main className="flex-1 min-h-0 overflow-hidden">
             <NoteEditor note={currentNote} onUpdateNote={updateNote} />
           </main>
         </SidebarInset>
